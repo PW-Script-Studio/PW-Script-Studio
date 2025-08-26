@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kachel 2 - Analyse & Verarbeitung | PW-Script-Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 10px 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 111, 0, 0.2), transparent);
+            animation: headerGlow 3s infinite;
+        }
+
+        @keyframes headerGlow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-size: 2em;
+            background: linear-gradient(45deg, #ff6f00, #ff9800, #ffc107);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #ffc107;
+            font-size: 1.2em;
+        }
+
+        /* Status Anzeige */
+        .status-anzeige {
+            background: rgba(255, 111, 0, 0.1);
+            border: 2px solid #ff6f00;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin: 0 auto 20px;
+            max-width: 600px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.active {
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: rgba(100, 100, 100, 0.3);
+            opacity: 0.5;
+        }
+
+        .status-indicator:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Bereich Container */
+        .bereich-container {
+            margin-bottom: 30px;
+        }
+
+        .bereich-titel {
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.2), rgba(255, 152, 0, 0.1));
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 111, 0, 0.3);
+            font-size: 1.3em;
+            color: #ffc107;
+        }
+
+        /* Container für 3 Spalten */
+        .spalten-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Spalten Styling */
+        .spalte {
+            background: rgba(30, 30, 46, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            min-height: 600px;
+            height: 70vh;
+            max-height: 800px;
+            display: flex;
+            flex-direction: column;
+            border: 5px solid transparent;
+            background-image: linear-gradient(#1e1e2e, #1e1e2e), 
+                              linear-gradient(45deg, #ff6f00, #ff9800);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 0 30px rgba(255, 111, 0, 0.2);
+        }
+
+        .spalte-header {
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.2), rgba(255, 152, 0, 0.1));
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 111, 0, 0.3);
+        }
+
+        .spalte-header h2 {
+            color: #ffc107;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        /* Content Container */
+        .content-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+
+        .content-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .content-container::-webkit-scrollbar-track {
+            background: rgba(255, 111, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .content-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #ff6f00, #ff9800);
+            border-radius: 10px;
+        }
+
+        /* Eingabebereich */
+        .eingabe-gruppe {
+            margin-bottom: 20px;
+        }
+
+        .eingabe-gruppe label {
+            display: block;
+            color: #ffc107;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .eingabe-gruppe input,
+        .eingabe-gruppe textarea,
+        .eingabe-gruppe select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 111, 0, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .eingabe-gruppe textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .eingabe-gruppe input:focus,
+        .eingabe-gruppe textarea:focus,
+        .eingabe-gruppe select:focus {
+            outline: none;
+            border-color: #ff6f00;
+            box-shadow: 0 0 15px rgba(255, 111, 0, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Qualitäts-Auswahl */
+        .qualitaet-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .qualitaet-option {
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .qualitaet-option.bronze {
+            background: linear-gradient(45deg, #cd7f32, #b87333);
+            border: 2px solid transparent;
+        }
+
+        .qualitaet-option.silber {
+            background: linear-gradient(45deg, #c0c0c0, #b8b8b8);
+            border: 2px solid transparent;
+        }
+
+        .qualitaet-option.gold {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            border: 2px solid transparent;
+            color: #333;
+        }
+
+        .qualitaet-option:hover {
+            transform: scale(1.05);
+        }
+
+        .qualitaet-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Anzeige Felder */
+        .anzeige-feld {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #ff6f00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .anzeige-label {
+            color: #ffc107;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .anzeige-wert {
+            color: #fff;
+            font-size: 1.1em;
+        }
+
+        /* Plagiat Anzeige */
+        .plagiat-anzeige {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .plagiat-bar {
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .plagiat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #66bb6a);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: width 0.5s ease;
+        }
+
+        .plagiat-fill.warning {
+            background: linear-gradient(90deg, #ff9800, #ffa726);
+        }
+
+        .plagiat-fill.danger {
+            background: linear-gradient(90deg, #f44336, #ef5350);
+        }
+
+        /* Arbeitsprobe/Script Container */
+        .probe-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .probe-titel {
+            color: #ffc107;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .probe-text {
+            color: #ddd;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6f00, #ff9800);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 111, 0, 0.5);
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            color: #64b5f6;
+            font-size: 0.9em;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .spalten-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 111, 0, 0.1);
+            border-top: 4px solid #ff6f00;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PW-Script-Studio</h1>
+        <div class="subtitle">Kachel 2 - Analyse & Verarbeitung</div>
+        <button onclick="clearLocalStorage()" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; background: rgba(255,0,0,0.2); border: 1px solid red; color: white; border-radius: 5px; cursor: pointer;">
+            🗑️ Cache leeren
+        </button>
+    </div>
+
+    <div class="status-anzeige">
+        <div id="statusOffen" class="status-indicator inactive" onclick="wechsleZuOffen()">
+            📋 Offene Aufträge: <span id="offenCount">0</span>
+        </div>
+        <div id="statusAktiv" class="status-indicator inactive" onclick="wechsleZuAktiv()">
+            ✅ Aktive Aufträge: <span id="aktivCount">0</span>
+        </div>
+    </div>
+
+    <!-- OFFENER BEREICH -->
+    <div id="offenerBereich" class="bereich-container hidden">
+        <div class="bereich-titel">🔵 OFFENER AUFTRAGS-BEREICH (Upwork)</div>
+        
+        <div class="spalten-container">
+            <!-- Spalte 1: Auftrag Analyse -->
+            <div class="spalte">
+                <div class="spalte-header">
+                    <h2>📊 Auftrag Analyse</h2>
+                </div>
+                
+                <div class="content-container">
+                    <div id="offenAuftragInfo" class="anzeige-feld">
+                        <div class="anzeige-label">Auftrag:</div>
+                        <div class="anzeige-wert" id="offenTitel">-</div>
+                        <div class="anzeige-label" style="margin-top: 10px;">ID:</div>
+                        <div class="anzeige-wert" id="offenId">-</div>
+                        <div class="anzeige-label" style="margin-top: 10px;">Beschreibung:</div>
+                        <div class="anzeige-wert" id="offenBeschreibung" style="font-size: 0.9em;">-</div>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Upwork Auftragsbeschreibung (für Analyse):</label>
+                        <textarea id="upworkBeschreibung" placeholder="Füge hier die Upwork Jobbeschreibung ein..." rows="6"></textarea>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Sprache:</label>
+                        <select id="spracheOffen">
+                            <option value="en" selected>Englisch</option>
+                            <option value="de">Deutsch</option>
+                        </select>
+                    </div>
+
+                    <div class="info-box">
+                        💡 Der Analyse-Workflow verarbeitet die Upwork-Beschreibung und erstellt optimierte Arbeitsproben
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="analysiereOffenenAuftrag()">
+                    🔍 Auftrag Analysieren
+                </button>
+            </div>
+
+            <!-- Spalte 2: Erstellte Daten -->
+            <div class="spalte">
+                <div class="spalte-header">
+                    <h2>📝 Erstellte Daten</h2>
+                </div>
+                
+                <div class="content-container">
+                    <div class="anzeige-feld">
+                        <div class="anzeige-label">Arbeitsprobe Titel:</div>
+                        <div class="anzeige-wert" id="probeTitel">-</div>
+                    </div>
+
+                    <div class="anzeige-feld">
+                        <div class="anzeige-label">Beschreibung:</div>
+                        <div class="anzeige-wert" id="probeBeschreibung">-</div>
+                    </div>
+
+                    <div class="anzeige-feld">
+                        <div class="anzeige-label">Keywords:</div>
+                        <div class="anzeige-wert" id="probeKeywords">-</div>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Qualität wählen:</label>
+                    </div>
+                    <div class="qualitaet-container">
+                        <div class="qualitaet-option bronze" onclick="setQualitaetOffen('bronze')">
+                            🥉 Bronze
+                        </div>
+                        <div class="qualitaet-option silber" onclick="setQualitaetOffen('silber')">
+                            🥈 Silber
+                        </div>
+                        <div class="qualitaet-option gold" onclick="setQualitaetOffen('gold')">
+                            🥇 Gold
+                        </div>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Wortanzahl (0-18000):</label>
+                        <input type="number" id="wortanzahlOffen" min="0" max="18000" value="1000">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="erstelleArbeitsprobe()">
+                   ✏️ Arbeitsprobe erstellen
+                </button>
+            </div>
+
+            <!-- Spalte 3: Arbeitsprobe -->
+            <div class="spalte">
+                <div class="spalte-header">
+                    <h2>📄 Arbeitsprobe</h2>
+                </div>
+                
+                <div class="content-container">
+                    <div class="probe-container">
+                        <div class="probe-titel" id="finalProbeTitel">-</div>
+                        <div class="probe-text" id="finalProbeText">Hier erscheint die erstellte Arbeitsprobe...</div>
+                    </div>
+
+                    <div class="plagiat-anzeige">
+                        <div class="anzeige-label">Plagiatsprüfung:</div>
+                        <div class="plagiat-bar">
+                            <div class="plagiat-fill" id="plagiatOffen" style="width: 0%;">
+                                0% Original
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" onclick="speichereInKachel1('offen')">
+                    💾 Arbeitsprobe in Kachel 1 speichern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AKTIVER BEREICH -->
+    <div id="aktiverBereich" class="bereich-container hidden">
+        <div class="bereich-titel">🟢 AKTIVER AUFTRAGS-BEREICH (Kunden)</div>
+        
+        <div class="spalten-container">
+            <!-- Spalte 1: Aktiver Auftrag -->
+            <div class="spalte">
+                <div class="spalte-header">
+                    <h2>📋 Aktiver Auftrag</h2>
+                </div>
+                
+                <div class="content-container">
+                    <div id="aktivAuftragInfo" class="anzeige-feld">
+                        <div class="anzeige-label">Titel:</div>
+                        <div class="anzeige-wert" id="aktivTitel">-</div>
+                        <div class="anzeige-label" style="margin-top: 10px;">ID:</div>
+                        <div class="anzeige-wert" id="aktivId">-</div>
+                        <div class="anzeige-label" style="margin-top: 10px;">Beschreibung:</div>
+                        <div class="anzeige-wert" id="aktivBeschreibung" style="font-size: 0.9em;">-</div>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Script-Titel vom Kunden:</label>
+                        <input type="text" id="scriptTitelKunde" placeholder="Script-Titel eingeben...">
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Beschreibung vom Kunden:</label>
+                        <textarea id="beschreibungKunde" placeholder="Beschreibung vom Kunden eingeben..." rows="4"></textarea>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Sprache:</label>
+                        <select id="spracheAktiv">
+                            <option value="en" selected>Englisch</option>
+                            <option value="de">Deutsch</option>
+                        </select>
+                    </div>
+
+                    <div class="info-box">
+                        🔬 Online-Recherche mit Serper & Opus 4.1 wird durchgeführt
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="analysiereAktivenAuftrag()">
+                    🌐 Auftrag Analysieren (mit Online-Recherche)
+                </button>
+            </div>
+
+            <!-- Spalte 2: Erstellte Daten -->
+            <div class="spalte">
+                <div class="spalte-header">
+                    <h2>📝 Erstellte Daten</h2>
+                </div>
+                
+                <div class="content-container">
+                    <div class="anzeige-feld">
+                        <div class="anzeige-label">Script-Titel:</div>
+                        <div class="anzeige-wert" id="scriptTitel">-</div>
+                    </div>
+
+                    <div class="anzeige-feld">
+                        <div class="anzeige-label">Optimierte Beschreibung:</div>
+                        <div class="anzeige-wert" id="scriptBeschreibung" style="font-size: 0.95em;">-</div>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Qualität wählen:</label>
+                    </div>
+                    <div class="qualitaet-container">
+                        <div class="qualitaet-option bronze" onclick="setQualitaetAktiv('bronze')">
+                            🥉 Bronze
+                        </div>
+                        <div class="qualitaet-option silber" onclick="setQualitaetAktiv('silber')">
+                            🥈 Silber
+                        </div>
+                        <div class="qualitaet-option gold" onclick="setQualitaetAktiv('gold')">
+                            🥇 Gold
+                        </div>
+                    </div>
+
+                    <div class="eingabe-gruppe">
+                        <label>Wortanzahl (0-18000):</label>
+                        <input type="number" id="wortanzahlAktiv" min="0" max="18000" value="1000">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="erstelleScript()">
+                    ✏️ Script Erstellen
+                </button>
+            </div>
+
+            <!-- Spalte 3: Script -->
+            <div class="spalte">
+                <div class="spalte-header">
+                    <h2>📜 Script</h2>
+                </div>
+                
+                <div class="content-container">
+                    <div class="probe-container">
+                        <div class="probe-titel" id="finalScriptTitel">-</div>
+                        <div class="probe-text" id="finalScriptText">Hier erscheint das erstellte Script...</div>
+                    </div>
+
+                    <div class="plagiat-anzeige">
+                        <div class="anzeige-label">Plagiatsprüfung:</div>
+                        <div class="plagiat-bar">
+                            <div class="plagiat-fill" id="plagiatAktiv" style="width: 0%;">
+                                0% Original
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" onclick="speichereInKachel1('aktiv')">
+                    💾 Script in Kachel 1 (Spalte 3) speichern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Daten aus Kachel 1
+        let geladeneAuftraege = {
+            offen: [],
+            aktiv: []
+        };
+        
+        // Ausgewählte Qualität
+        let qualitaetOffen = null;
+        let qualitaetAktiv = null;
+        
+        // Aktuell bearbeiteter Auftrag
+        let aktuellerAuftrag = null;
+
+        // LocalStorage leeren
+        function clearLocalStorage() {
+            if(confirm('Möchten Sie wirklich alle gespeicherten Aufträge löschen?')) {
+                localStorage.removeItem('kachel2_auftraege');
+                location.reload();
+            }
+        }
+        
+        // Beim Laden der Seite prüfen
+        document.addEventListener('DOMContentLoaded', function() {
+            // Nur echte Daten aus Kachel 1 laden
+            ladeAuftraege();
+        });
+
+        // Aufträge aus localStorage laden
+        function ladeAuftraege() {
+            try {
+                const offenData = localStorage.getItem('kachel2_auftraege');
+                if (offenData) {
+                    const parsed = JSON.parse(offenData);
+                    
+                    // ZUERST: Beide Bereiche ausblenden
+                    document.getElementById('offenerBereich').classList.add('hidden');
+                    document.getElementById('aktiverBereich').classList.add('hidden');
+                    
+                    // Beide Status-Indikatoren inaktiv setzen
+                    document.getElementById('statusOffen').classList.add('inactive');
+                    document.getElementById('statusOffen').classList.remove('active');
+                    document.getElementById('statusAktiv').classList.add('inactive');
+                    document.getElementById('statusAktiv').classList.remove('active');
+                    
+                    // DANN: Nur den relevanten Bereich einblenden
+                    if (parsed.status === 'offen') {
+                        // Offene Aufträge laden
+                        geladeneAuftraege.offen = parsed.auftraege;
+                        document.getElementById('offenCount').textContent = parsed.auftraege.length;
+                        
+                        // Status-Anzeige aktualisieren
+                        document.getElementById('statusOffen').classList.remove('inactive');
+                        document.getElementById('statusOffen').classList.add('active');
+                        
+                        // NUR offenen Bereich zeigen
+                        document.getElementById('offenerBereich').classList.remove('hidden');
+                        
+                        // Ersten Auftrag anzeigen
+                        if (parsed.auftraege.length > 0) {
+                            zeigeOffenenAuftrag(parsed.auftraege[0]);
+                        }
+                        
+                    } else if (parsed.status === 'aktiv') {
+                        // Aktive Aufträge laden
+                        geladeneAuftraege.aktiv = parsed.auftraege;
+                        document.getElementById('aktivCount').textContent = parsed.auftraege.length;
+                        
+                        // Status-Anzeige aktualisieren
+                        document.getElementById('statusAktiv').classList.remove('inactive');
+                        document.getElementById('statusAktiv').classList.add('active');
+                        
+                        // NUR aktiven Bereich zeigen
+                        document.getElementById('aktiverBereich').classList.remove('hidden');
+                        
+                        // Ersten Auftrag anzeigen
+                        if (parsed.auftraege.length > 0) {
+                            zeigeAktivenAuftrag(parsed.auftraege[0]);
+                        }
+                    }
+                } else {
+                    // Keine Daten vorhanden - alles leer lassen
+                    document.getElementById('offenTitel').textContent = 'Kein Auftrag geladen';
+                    document.getElementById('offenId').textContent = '-';
+                    document.getElementById('offenBeschreibung').textContent = 'Bitte laden Sie einen Auftrag aus Kachel 1';
+                    
+                    document.getElementById('aktivTitel').textContent = 'Kein Auftrag geladen';
+                    document.getElementById('aktivId').textContent = '-';
+                    document.getElementById('aktivBeschreibung').textContent = 'Bitte laden Sie einen Auftrag aus Kachel 1';
+                }
+            } catch(e) {
+                console.error('Fehler beim Laden der Aufträge:', e);
+            }
+        }
+        
+        // Demo-Daten für Tests
+        function ladeDemoDaten() {
+            // Demo-Auftrag erstellen
+            const demoOffen = {
+                status: 'offen',
+                auftraege: [{
+                    id: 'PW-1001',
+                    titel: 'E-Commerce Platform Development',
+                    beschreibung: 'Entwicklung einer modernen E-Commerce Plattform mit React und Node.js, inklusive Zahlungsintegration und Admin-Dashboard',
+                    status: 'OFFEN',
+                    erstelltAm: '26.08.2025, 14:30:00'
+                }]
+            };
+            
+            // Demo-Daten in localStorage speichern
+            localStorage.setItem('kachel2_auftraege', JSON.stringify(demoOffen));
+            
+            // Beide Bereiche ausblenden
+            document.getElementById('offenerBereich').classList.add('hidden');
+            document.getElementById('aktiverBereich').classList.add('hidden');
+            
+            // Offenen Bereich aktivieren
+            geladeneAuftraege.offen = demoOffen.auftraege;
+            document.getElementById('offenCount').textContent = demoOffen.auftraege.length;
+            document.getElementById('statusOffen').classList.remove('inactive');
+            document.getElementById('statusOffen').classList.add('active');
+            document.getElementById('statusAktiv').classList.add('inactive');
+            document.getElementById('offenerBereich').classList.remove('hidden');
+            
+            // Ersten Auftrag anzeigen
+            zeigeOffenenAuftrag(demoOffen.auftraege[0]);
+            
+            // Beispiel Upwork-Text vorausfüllen
+            document.getElementById('upworkBeschreibung').value = `We need an experienced developer to build a modern e-commerce platform.
+
+Requirements:
+- React.js for frontend
+- Node.js/Express for backend
+- Payment gateway integration (Stripe)
+- Admin dashboard
+- Mobile responsive design
+- User authentication
+- Product catalog with search
+- Shopping cart functionality
+
+Budget: $5000-$8000
+Timeline: 6-8 weeks`;
+            
+            showNotification('Demo-Auftrag geladen! Du kannst jetzt den Workflow testen.', 'info');
+        }
+
+        // Manuell zwischen Bereichen wechseln
+        function wechsleZuOffen() {
+            if (geladeneAuftraege.offen.length === 0) {
+                showNotification('Keine offenen Aufträge vorhanden!', 'error');
+                return;
+            }
+            
+            // Bereiche umschalten
+            document.getElementById('aktiverBereich').classList.add('hidden');
+            document.getElementById('offenerBereich').classList.remove('hidden');
+            
+            // Status aktualisieren
+            document.getElementById('statusOffen').classList.remove('inactive');
+            document.getElementById('statusOffen').classList.add('active');
+            document.getElementById('statusAktiv').classList.add('inactive');
+            document.getElementById('statusAktiv').classList.remove('active');
+        }
+        
+        function wechsleZuAktiv() {
+            if (geladeneAuftraege.aktiv.length === 0) {
+                showNotification('Keine aktiven Aufträge vorhanden!', 'error');
+                return;
+            }
+            
+            // Bereiche umschalten
+            document.getElementById('offenerBereich').classList.add('hidden');
+            document.getElementById('aktiverBereich').classList.remove('hidden');
+            
+            // Status aktualisieren
+            document.getElementById('statusAktiv').classList.remove('inactive');
+            document.getElementById('statusAktiv').classList.add('active');
+            document.getElementById('statusOffen').classList.add('inactive');
+            document.getElementById('statusOffen').classList.remove('active');
+        }
+
+        // Offenen Auftrag anzeigen
+        function zeigeOffenenAuftrag(auftrag) {
+            aktuellerAuftrag = auftrag;
+            document.getElementById('offenTitel').textContent = auftrag.titel;
+            document.getElementById('offenId').textContent = auftrag.id;
+            document.getElementById('offenBeschreibung').textContent = auftrag.beschreibung;
+        }
+
+        // Aktiven Auftrag anzeigen
+        function zeigeAktivenAuftrag(auftrag) {
+            aktuellerAuftrag = auftrag;
+            document.getElementById('aktivTitel').textContent = auftrag.titel || '-';
+            document.getElementById('aktivId').textContent = auftrag.id || '-';
+            document.getElementById('aktivBeschreibung').textContent = auftrag.beschreibung || '-';
+            // Bei aktiven Aufträgen müssen Script-Titel und Beschreibung vom Kunden neu eingegeben werden
+        }
+
+        // OFFENER BEREICH FUNKTIONEN
+        function setQualitaetOffen(qualitaet) {
+            qualitaetOffen = qualitaet;
+            document.querySelectorAll('#offenerBereich .qualitaet-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        function analysiereOffenenAuftrag() {
+            const beschreibung = document.getElementById('upworkBeschreibung').value;
+            const sprache = document.getElementById('spracheOffen').value;
+            
+            if (!beschreibung) {
+                alert('Bitte Upwork Beschreibung eingeben!');
+                return;
+            }
+            
+            // Analyse durchführen
+            showLoading('Analysiere Upwork-Auftrag mit Opus 4.1...');
+            
+            setTimeout(() => {
+                // Hier würde die echte API-Analyse stattfinden
+                document.getElementById('probeTitel').textContent = 'Wird analysiert...';
+                document.getElementById('probeBeschreibung').textContent = 'Analyse läuft...';
+                document.getElementById('probeKeywords').textContent = 'Keywords werden extrahiert...';
+                
+                hideLoading();
+                showNotification('Analyse mit Opus 4.1 bereit für nächsten Schritt!', 'success');
+            }, 2000);
+        }
+
+        function erstelleArbeitsprobe() {
+            if (!qualitaetOffen) {
+                alert('Bitte Qualität auswählen!');
+                return;
+            }
+            
+            const wortanzahl = document.getElementById('wortanzahlOffen').value;
+            
+            // Bestimme KI basierend auf Qualität
+            let kiModule = '';
+            switch(qualitaetOffen) {
+                case 'bronze':
+                    kiModule = 'Gemini 2.5 Pro (3 Hooks) + Opus 4.1';
+                    break;
+                case 'silber':
+                    kiModule = 'Gemini 2.5 Pro (5 Hooks) + Opus 4.1 + Sonnet 4';
+                    break;
+                case 'gold':
+                    kiModule = 'Gemini 2.5 Pro (7 Hooks) + Opus 4.1 + Sonnet 4 + Serper API';
+                    break;
+            }
+            
+            showLoading(`Erstelle Arbeitsprobe mit ${kiModule}...`);
+            
+            setTimeout(() => {
+                // Hier würde die echte API-Generierung stattfinden
+                document.getElementById('finalProbeTitel').textContent = 'Arbeitsprobe wird erstellt...';
+                document.getElementById('finalProbeText').textContent = 'Content wird generiert...';
+                
+                // Plagiatsprüfung Platzhalter
+                setPlagiatAnzeige('offen', 0);
+                
+                hideLoading();
+                showNotification('Bereit für API-Generierung!', 'info');
+            }, 2000);
+        }
+
+        // AKTIVER BEREICH FUNKTIONEN
+        function setQualitaetAktiv(qualitaet) {
+            qualitaetAktiv = qualitaet;
+            document.querySelectorAll('#aktiverBereich .qualitaet-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        function analysiereAktivenAuftrag() {
+            const scriptTitel = document.getElementById('scriptTitelKunde').value;
+            const beschreibung = document.getElementById('beschreibungKunde').value;
+            const sprache = document.getElementById('spracheAktiv').value;
+            
+            if (!scriptTitel || !beschreibung) {
+                alert('Bitte alle Felder ausfüllen!');
+                return;
+            }
+            
+            showLoading('Führe Online-Recherche durch (Serper + Opus 4.1)...');
+            
+            setTimeout(() => {
+                // Hier würde die echte API-Recherche stattfinden
+                document.getElementById('scriptTitel').textContent = scriptTitel;
+                document.getElementById('scriptBeschreibung').textContent = 'Recherche läuft...';
+                
+                hideLoading();
+                showNotification('Bereit für Script-Erstellung!', 'success');
+            }, 2000);
+        }
+
+        function erstelleScript() {
+            if (!qualitaetAktiv) {
+                alert('Bitte Qualität auswählen!');
+                return;
+            }
+            
+            const wortanzahl = document.getElementById('wortanzahlAktiv').value;
+            
+            // Bestimme KI basierend auf Qualität
+            let kiModule = '';
+            switch(qualitaetAktiv) {
+                case 'bronze':
+                    kiModule = 'Gemini 2.5 Pro (3 Hooks) + Opus 4.1';
+                    break;
+                case 'silber':
+                    kiModule = 'Gemini 2.5 Pro (5 Hooks) + Opus 4.1 + Sonnet 4 + Copyscape';
+                    break;
+                case 'gold':
+                    kiModule = 'Gemini 2.5 Pro (7 Hooks) + Opus 4.1 + Sonnet 4 + Serper API + Copyscape';
+                    break;
+            }
+            
+            showLoading(`Erstelle Script mit ${kiModule}...`);
+            
+            setTimeout(() => {
+                // Hier würde die echte API-Generierung stattfinden
+                document.getElementById('finalScriptTitel').textContent = 'Script wird erstellt...';
+                document.getElementById('finalScriptText').textContent = 'Content wird generiert...';
+                
+                // Plagiatsprüfung Platzhalter
+                setPlagiatAnzeige('aktiv', 0);
+                
+                hideLoading();
+                showNotification('Bereit für API-Generierung!', 'info');
+            }, 2000);
+        }
+
+        // Plagiat Anzeige setzen
+        function setPlagiatAnzeige(typ, prozent) {
+            const element = typ === 'offen' ? 
+                document.getElementById('plagiatOffen') : 
+                document.getElementById('plagiatAktiv');
+            
+            element.style.width = prozent + '%';
+            element.textContent = prozent + '% Original';
+            
+            // Farbe basierend auf Wert
+            element.classList.remove('warning', 'danger');
+            if (prozent < 60) {
+                element.classList.add('danger');
+            } else if (prozent < 80) {
+                element.classList.add('warning');
+            }
+        }
+
+        // In Kachel 1 speichern
+        function speichereInKachel1(typ) {
+            showNotification('Speichere in Kachel 1...', 'info');
+            
+            // Hier würde die Speicherlogik kommen
+            setTimeout(() => {
+                // Spalten zurücksetzen
+                resetSpalten(typ);
+                showNotification('Erfolgreich in Kachel 1 gespeichert!', 'success');
+            }, 1500);
+        }
+
+        // Spalten zurücksetzen
+        function resetSpalten(typ) {
+            if (typ === 'offen') {
+                document.getElementById('upworkBeschreibung').value = '';
+                document.getElementById('probeTitel').textContent = '-';
+                document.getElementById('probeBeschreibung').textContent = '-';
+                document.getElementById('probeKeywords').textContent = '-';
+                document.getElementById('finalProbeTitel').textContent = '-';
+                document.getElementById('finalProbeText').textContent = 'Hier erscheint die erstellte Arbeitsprobe...';
+                document.getElementById('wortanzahlOffen').value = '1000';
+                qualitaetOffen = null;
+                document.querySelectorAll('#offenerBereich .qualitaet-option').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                setPlagiatAnzeige('offen', 0);
+            } else {
+                document.getElementById('scriptTitelKunde').value = '';
+                document.getElementById('beschreibungKunde').value = '';
+                document.getElementById('scriptTitel').textContent = '-';
+                document.getElementById('scriptBeschreibung').textContent = '-';
+                document.getElementById('finalScriptTitel').textContent = '-';
+                document.getElementById('finalScriptText').textContent = 'Hier erscheint das erstellte Script...';
+                document.getElementById('wortanzahlAktiv').value = '1000';
+                qualitaetAktiv = null;
+                document.querySelectorAll('#aktiverBereich .qualitaet-option').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                setPlagiatAnzeige('aktiv', 0);
+            }
+        }
+
+        // Hilfsfunktionen
+        function showLoading(message) {
+            const loading = document.createElement('div');
+            loading.id = 'loadingOverlay';
+            loading.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            loading.innerHTML = `
+                <div class="loading-spinner"></div>
+                <div style="color: white; margin-top: 20px; font-size: 1.2em;">${message}</div>
+            `;
+            document.body.appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loadingOverlay');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 10px;
+                color: white;
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            `;
+            
+            switch(type) {
+                case 'success':
+                    notification.style.background = 'linear-gradient(45deg, #4caf50, #66bb6a)';
+                    break;
+                case 'error':
+                    notification.style.background = 'linear-gradient(45deg, #f44336, #ef5350)';
+                    break;
+                case 'info':
+                    notification.style.background = 'linear-gradient(45deg, #2196f3, #42a5f5)';
+                    break;
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

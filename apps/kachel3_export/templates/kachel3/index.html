@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kachel 3 - Ausgabe & Export | PW-Script-Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 10px 20px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 111, 0, 0.2), transparent);
+            animation: headerGlow 3s infinite;
+        }
+
+        @keyframes headerGlow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-size: 2em;
+            background: linear-gradient(45deg, #ff6f00, #ff9800, #ffc107);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #ffc107;
+            font-size: 1.2em;
+        }
+
+        /* Status Anzeige - ENTWEDER/ODER Design */
+        .status-anzeige {
+            background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(50,50,50,0.3));
+            border: 2px solid #ff6f00;
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin: 0 auto 30px;
+            max-width: 600px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .status-indicator {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .status-indicator.active {
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+            transform: scale(1.1);
+        }
+
+        .status-indicator.inactive {
+            background: rgba(100, 100, 100, 0.3);
+            opacity: 0.5;
+        }
+
+        .status-indicator:hover:not(.active) {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Container für 6 Spalten */
+        .main-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+
+        /* Bereich Container */
+        .bereich-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .bereich-container.hidden {
+            display: none !important;
+        }
+
+        /* Spalten Styling */
+        .spalte {
+            background: rgba(30, 30, 46, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            height: 80vh;
+            max-height: 900px;
+            display: flex;
+            flex-direction: column;
+            border: 5px solid transparent;
+            background-image: linear-gradient(#1e1e2e, #1e1e2e), 
+                              linear-gradient(45deg, #ff6f00, #ff9800);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 0 30px rgba(255, 111, 0, 0.2);
+        }
+
+        .spalte-header {
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.2), rgba(255, 152, 0, 0.1));
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 111, 0, 0.3);
+        }
+
+        .spalte-header h2 {
+            color: #ffc107;
+            font-size: 1.3em;
+            margin-bottom: 5px;
+        }
+
+        /* Content Container */
+        .content-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+
+        .content-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .content-container::-webkit-scrollbar-track {
+            background: rgba(255, 111, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .content-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #ff6f00, #ff9800);
+            border-radius: 10px;
+        }
+
+        /* Wochenblock */
+        .wochenblock {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #ff6f00;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wochenblock:hover {
+            transform: translateX(5px);
+            box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+            background: rgba(255, 111, 0, 0.1);
+        }
+
+        .wochenblock.active {
+            border-left-color: #4caf50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .wochenblock-title {
+            color: #ffc107;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .wochenblock-date {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        /* Detail Item */
+        .detail-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            background: rgba(255, 111, 0, 0.1);
+            transform: translateX(3px);
+        }
+
+        .detail-item.gold {
+            border-left: 4px solid #ffd700;
+        }
+
+        .detail-item.silber {
+            border-left: 4px solid #c0c0c0;
+        }
+
+        .detail-item.bronze {
+            border-left: 4px solid #cd7f32;
+        }
+
+        .quality-label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .quality-label.gold { color: #ffd700; }
+        .quality-label.silber { color: #c0c0c0; }
+        .quality-label.bronze { color: #cd7f32; }
+
+        /* Script Container */
+        .script-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .script-title {
+            color: #ffc107;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .script-text {
+            color: #ddd;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin: 5px;
+        }
+
+        .btn-pdf {
+            background: linear-gradient(45deg, #ff6f00, #ff9800);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-html {
+            background: linear-gradient(45deg, #2196f3, #42a5f5);
+            color: white;
+            flex: 1;
+        }
+
+        .btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(255, 111, 0, 0.5);
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #64b5f6;
+            text-align: center;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: #888;
+            padding: 40px;
+        }
+
+        /* Lava Effect für bestimmte Elemente */
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        .lava-border::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            background: conic-gradient(
+                from var(--angle),
+                #ff6f00 0deg,
+                #ff9800 90deg,
+                #ffc107 180deg,
+                #ff9800 270deg,
+                #ff6f00 360deg
+            );
+            border-radius: 18px;
+            z-index: -1;
+            animation: lavaRotate 4s linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes lavaRotate {
+            from { --angle: 0deg; }
+            to { --angle: 360deg; }
+        }
+
+        /* Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 111, 0, 0.1);
+            border-top: 4px solid #ff6f00;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1600px) {
+            .bereich-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PW-Script-Studio</h1>
+        <div class="subtitle">Kachel 3 - Ausgabe & Export</div>
+    </div>
+
+    <div class="status-anzeige">
+        <div id="statusOffen" class="status-indicator inactive" onclick="wechsleZuOffen()">
+            📋 Offene Aufträge
+        </div>
+        <div style="color: #666; padding: 0 10px;">ODER</div>
+        <div id="statusAktiv" class="status-indicator inactive" onclick="wechsleZuAktiv()">
+            ✅ Aktiver Auftrag
+        </div>
+    </div>
+
+    <!-- OFFENER BEREICH -->
+    <div id="offenerBereich" class="bereich-container hidden">
+        <!-- Spalte 1: Der eine offene Auftrag mit Wochenblöcken -->
+        <div class="spalte">
+            <div class="spalte-header">
+                <h2>📋 Offener Auftrag (Wochenblöcke)</h2>
+            </div>
+            
+            <div class="content-container" id="offeneAuftraege">
+                <!-- Der eine offene Auftrag + seine Wochenblöcke -->
+            </div>
+        </div>
+
+        <!-- Spalte 2: Detailansicht -->
+        <div class="spalte">
+            <div class="spalte-header">
+                <h2>📊 Arbeitsproben der Woche</h2>
+            </div>
+            
+            <div class="content-container" id="offeneDetails">
+                <div class="info-box">
+                    Wähle einen Wochenblock aus Spalte 1
+                </div>
+            </div>
+        </div>
+
+        <!-- Spalte 3: Arbeitsprobe -->
+        <div class="spalte">
+            <div class="spalte-header">
+                <h2>📄 Arbeitsprobe</h2>
+            </div>
+            
+            <div class="content-container">
+                <div id="arbeitsprobeAnzeige">
+                    <div class="info-box">
+                        Wähle eine Arbeitsprobe aus Spalte 2
+                    </div>
+                </div>
+            </div>
+            
+            <div class="download-buttons">
+                <button class="btn btn-pdf" onclick="downloadPDF('offen')" disabled id="pdfBtnOffen">
+                    📥 PDF Download
+                </button>
+                <button class="btn btn-html" onclick="downloadHTML('offen')" disabled id="htmlBtnOffen">
+                    📝 HTML Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AKTIVER BEREICH -->
+    <div id="aktiverBereich" class="bereich-container hidden">
+        <!-- Spalte 1: Der eine aktive Auftrag mit allen Wochenblöcken -->
+        <div class="spalte">
+            <div class="spalte-header">
+                <h2>✅ Aktiver Auftrag (Wochenblöcke)</h2>
+            </div>
+            
+            <div class="content-container" id="aktiveAuftraege">
+                <!-- Der eine aktive Auftrag + alle seine Wochenblöcke -->
+            </div>
+        </div>
+
+        <!-- Spalte 2: Scripts der Woche -->
+        <div class="spalte">
+            <div class="spalte-header">
+                <h2>📝 Scripts der Woche</h2>
+            </div>
+            
+            <div class="content-container" id="aktiveDetails">
+                <div class="info-box">
+                    Wähle einen Wochenblock aus Spalte 1
+                </div>
+            </div>
+        </div>
+
+        <!-- Spalte 3: Script -->
+        <div class="spalte">
+            <div class="spalte-header">
+                <h2>📜 Script</h2>
+            </div>
+            
+            <div class="content-container">
+                <div id="scriptAnzeige">
+                    <div class="info-box">
+                        Wähle ein Script aus Spalte 2
+                    </div>
+                </div>
+            </div>
+            
+            <div class="download-buttons">
+                <button class="btn btn-pdf" onclick="downloadPDF('aktiv')" disabled id="pdfBtnAktiv">
+                    📥 PDF Download
+                </button>
+                <button class="btn btn-html" onclick="downloadHTML('aktiv')" disabled id="htmlBtnAktiv">
+                    📝 HTML Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        ========================================
+        KACHEL 3 - AUSGABE & EXPORT SYSTEM
+        ========================================
+        
+        WICHTIGE SYSTEM-REGELN:
+        1. Es kann immer nur EIN Auftrag geladen sein (entweder offen ODER aktiv)
+        2. Dieser EINE Auftrag hat seine Inhalte in Wochenblöcken organisiert
+        3. Offener Auftrag: 2-3 Arbeitsproben (für Bewerbung)
+        4. Aktiver Auftrag: 1-7 Scripts pro Woche (kann über Monate gehen!)
+        
+        DATENFLUSS:
+        Kachel 1 → Kachel 3 (niemals direkt aus Kachel 2!)
+        
+        STRUKTUR:
+        - ENTWEDER: 1 offener Auftrag mit Arbeitsproben in Wochenblöcken
+        - ODER: 1 aktiver Auftrag mit Scripts in Wochenblöcken
+        - NIEMALS: Mehrere Aufträge oder gemischte Anzeige
+        ========================================
+        */
+
+        // ===== DATEN STRUKTUR =====
+        let datenbank = {
+            offen: {
+                auftrag: null,  // NUR EIN offener Auftrag
+                wochenBloecke: {}  // Arbeitsproben dieses EINEN Auftrags nach Wochen
+            },
+            aktiv: {
+                auftrag: null,  // NUR EIN aktiver Auftrag
+                wochenBloecke: {}  // Scripts dieses EINEN Auftrags nach Wochen
+            }
+        };
+
+        // Aktuell ausgewählte Items
+        let aktuelleAuswahl = {
+            wochenblock: null,
+            detail: null,
+            inhalt: null,
+            typ: null  // 'offen' oder 'aktiv'
+        };
+
+        // ===== INITIALISIERUNG =====
+        document.addEventListener('DOMContentLoaded', function() {
+            ladeDatenAusLocalStorage();
+            zeigeOffenenBereich();  // Standard: Offene Aufträge anzeigen
+        });
+
+        // ===== DATEN LADEN =====
+        function ladeDatenAusLocalStorage() {
+            try {
+                // Prüfe ob localStorage verfügbar ist
+                if (typeof(Storage) === "undefined") {
+                    console.warn('LocalStorage nicht verfügbar');
+                    erstelleDemoDaten();
+                    return;
+                }
+
+                // Versuche echte Daten aus Kachel 1 zu laden
+                try {
+                    const kachel3Daten = localStorage.getItem('kachel3_auftraege');
+                    if (kachel3Daten) {
+                        const parsed = JSON.parse(kachel3Daten);
+                        
+                        // Lade die Daten basierend auf Status
+                        if (parsed.status === 'offen') {
+                            datenbank.offen.auftrag = parsed.auftrag;
+                            datenbank.offen.wochenBloecke = parsed.wochenBloecke || {};
+                            console.log('✅ Offener Auftrag aus Kachel 1 geladen:', parsed.auftrag.titel);
+                        } else if (parsed.status === 'aktiv') {
+                            datenbank.aktiv.auftrag = parsed.auftrag;
+                            datenbank.aktiv.wochenBloecke = parsed.wochenBloecke || {};
+                            console.log('✅ Aktiver Auftrag aus Kachel 1 geladen:', parsed.auftrag.titel);
+                        }
+                    } else {
+                        console.log('📭 Keine Daten aus Kachel 1 vorhanden');
+                    }
+                } catch(e) {
+                    console.log('Fehler beim Laden der Daten:', e);
+                }
+
+            } catch(error) {
+                console.log('LocalStorage Fehler:', error);
+            }
+
+            // Initialisiere leere Datenbank wenn keine Daten vorhanden
+            erstelleDemoDaten();
+        }
+
+        function erstelleDemoDaten() {
+            // ===== KEINE DEMO-DATEN - System startet leer =====
+            // Warte auf echte Daten aus Kachel 1
+            
+            // Leere Datenbank initialisieren
+            datenbank.offen.auftrag = null;
+            datenbank.offen.wochenBloecke = {};
+            
+            datenbank.aktiv.auftrag = null;
+            datenbank.aktiv.wochenBloecke = {};
+            
+            console.log('📭 Kachel 3 bereit - warte auf Daten aus Kachel 1');
+        }
+
+        // ===== BEREICH WECHSEL - NUR EINER KANN AKTIV SEIN! =====
+        function wechsleZuOffen() {
+            // VERSTECKE aktiven Bereich KOMPLETT
+            document.getElementById('aktiverBereich').classList.add('hidden');
+            document.getElementById('aktiverBereich').style.display = 'none';
+            
+            // ZEIGE NUR offenen Bereich
+            document.getElementById('offenerBereich').classList.remove('hidden');
+            document.getElementById('offenerBereich').style.display = 'grid';
+            
+            // Update Status-Anzeige - NUR EINER ist aktiv!
+            document.getElementById('statusOffen').classList.add('active');
+            document.getElementById('statusOffen').classList.remove('inactive');
+            document.getElementById('statusOffen').style.background = 'linear-gradient(45deg, #2196f3, #42a5f5)';
+            
+            // Aktiv-Button wird komplett inaktiv
+            document.getElementById('statusAktiv').classList.remove('active');
+            document.getElementById('statusAktiv').classList.add('inactive');
+            document.getElementById('statusAktiv').style.background = 'rgba(100, 100, 100, 0.3)';
+            
+            aktuelleAuswahl.typ = 'offen';
+            
+            // Reset alle Auswahlen beim Wechsel
+            aktuelleAuswahl.wochenblock = null;
+            aktuelleAuswahl.detail = null;
+            aktuelleAuswahl.inhalt = null;
+            
+            zeigeOffeneAuftraege();
+        }
+
+        function wechsleZuAktiv() {
+            // VERSTECKE offenen Bereich KOMPLETT
+            document.getElementById('offenerBereich').classList.add('hidden');
+            document.getElementById('offenerBereich').style.display = 'none';
+            
+            // ZEIGE NUR aktiven Bereich
+            document.getElementById('aktiverBereich').classList.remove('hidden');
+            document.getElementById('aktiverBereich').style.display = 'grid';
+            
+            // Update Status-Anzeige - NUR EINER ist aktiv!
+            document.getElementById('statusAktiv').classList.add('active');
+            document.getElementById('statusAktiv').classList.remove('inactive');
+            document.getElementById('statusAktiv').style.background = 'linear-gradient(45deg, #4caf50, #66bb6a)';
+            
+            // Offen-Button wird komplett inaktiv
+            document.getElementById('statusOffen').classList.remove('active');
+            document.getElementById('statusOffen').classList.add('inactive');
+            document.getElementById('statusOffen').style.background = 'rgba(100, 100, 100, 0.3)';
+            
+            aktuelleAuswahl.typ = 'aktiv';
+            
+            // Reset alle Auswahlen beim Wechsel
+            aktuelleAuswahl.wochenblock = null;
+            aktuelleAuswahl.detail = null;
+            aktuelleAuswahl.inhalt = null;
+            
+            zeigeAktiveAuftraege();
+        }
+
+        function zeigeOffenenBereich() {
+            // Standard beim Start: Offene Aufträge
+            wechsleZuOffen();
+        }
+
+        // ===== SPALTE 1: AUFTRÄGE ANZEIGEN =====
+        function zeigeOffeneAuftraege() {
+            const container = document.getElementById('offeneAuftraege');
+            container.innerHTML = '';
+            
+            // Prüfe ob ein offener Auftrag geladen ist
+            if (!datenbank.offen.auftrag) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3em; margin-bottom: 20px;">📭</div>
+                        <div style="font-size: 1.2em; color: #ffc107;">Kein offener Auftrag vorhanden</div>
+                        <div style="color: #888; margin-top: 10px;">
+                            Bitte in Kachel 1 einen offenen Auftrag<br>
+                            mit "In Kachel 3 laden" exportieren
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Info-Header für DEN EINEN offenen Auftrag
+            const infoBlock = document.createElement('div');
+            infoBlock.style.cssText = 'background: rgba(33, 150, 243, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #2196f3;';
+            infoBlock.innerHTML = `
+                <div style="color: #2196f3; font-weight: bold;">📌 Offener Auftrag:</div>
+                <div style="color: #ffc107; font-size: 1.1em; margin-top: 5px;">${datenbank.offen.auftrag.titel}</div>
+                <div style="color: #aaa; font-size: 0.9em;">ID: ${datenbank.offen.auftrag.id}</div>
+            `;
+            container.appendChild(infoBlock);
+            
+            // Zeige alle Wochenblöcke für diesen EINEN Auftrag
+            Object.keys(datenbank.offen.wochenBloecke).forEach(woche => {
+                const wochenData = datenbank.offen.wochenBloecke[woche];
+                const block = document.createElement('div');
+                block.className = 'wochenblock';
+                
+                const arbeitsprobenCount = wochenData.arbeitsproben ? wochenData.arbeitsproben.length : 0;
+                
+                block.innerHTML = `
+                    <div class="wochenblock-title">
+                        Arbeitsprobe
+                    </div>
+                    <div class="wochenblock-date">
+                        📅 ${woche}
+                    </div>
+                    <div style="color: #4caf50; font-size: 0.85em; margin-top: 5px;">
+                        ${arbeitsprobenCount} Arbeitsprobe${arbeitsprobenCount !== 1 ? 'n' : ''}
+                    </div>
+                `;
+                block.onclick = () => zeigeOffeneDetails(wochenData, block);
+                container.appendChild(block);
+            });
+        }
+
+        function zeigeAktiveAuftraege() {
+            const container = document.getElementById('aktiveAuftraege');
+            container.innerHTML = '';
+            
+            // Prüfe ob ein aktiver Auftrag geladen ist
+            if (!datenbank.aktiv.auftrag) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3em; margin-bottom: 20px;">📭</div>
+                        <div style="font-size: 1.2em; color: #4caf50;">Kein aktiver Auftrag vorhanden</div>
+                        <div style="color: #888; margin-top: 10px;">
+                            Bitte in Kachel 1 einen aktiven Auftrag<br>
+                            mit "In Kachel 3 laden" exportieren
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Info-Header für DEN EINEN aktiven Auftrag
+            const infoBlock = document.createElement('div');
+            infoBlock.style.cssText = 'background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #4caf50;';
+            infoBlock.innerHTML = `
+                <div style="color: #4caf50; font-weight: bold;">📌 Aktiver Auftrag:</div>
+                <div style="color: #ffc107; font-size: 1.1em; margin-top: 5px;">${datenbank.aktiv.auftrag.titel}</div>
+                <div style="color: #aaa; font-size: 0.9em;">ID: ${datenbank.aktiv.auftrag.id} | Kunde: ${datenbank.aktiv.auftrag.kunde}</div>
+                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">
+                    Laufzeit: ${datenbank.aktiv.auftrag.laufzeit || 'unbegrenzt'} | 
+                    Scripts/Woche: ${datenbank.aktiv.auftrag.scriptProWoche || 'variabel'}
+                </div>
+            `;
+            container.appendChild(infoBlock);
+            
+            // Zeige alle Wochenblöcke für diesen EINEN Auftrag (können viele sein!)
+            Object.keys(datenbank.aktiv.wochenBloecke).sort().reverse().forEach(woche => {
+                const wochenData = datenbank.aktiv.wochenBloecke[woche];
+                const block = document.createElement('div');
+                block.className = 'wochenblock';
+                
+                const scriptCount = wochenData.scripts ? wochenData.scripts.length : 0;
+                
+                block.innerHTML = `
+                    <div class="wochenblock-title">
+                        Woche ${woche.split(' - ')[0]}
+                    </div>
+                    <div class="wochenblock-date">
+                        📅 ${woche}
+                    </div>
+                    <div style="color: #4caf50; font-size: 0.85em; margin-top: 5px;">
+                        ${scriptCount} Script${scriptCount !== 1 ? 's' : ''} erstellt
+                    </div>
+                `;
+                block.onclick = () => zeigeAktiveDetails(wochenData, block);
+                container.appendChild(block);
+            });
+            
+            // Zeige Statistik am Ende
+            const totalScripts = Object.values(datenbank.aktiv.wochenBloecke).reduce((sum, woche) => {
+                return sum + (woche.scripts ? woche.scripts.length : 0);
+            }, 0);
+            
+            const statsBlock = document.createElement('div');
+            statsBlock.style.cssText = 'background: rgba(255, 111, 0, 0.1); padding: 10px; border-radius: 8px; margin-top: 15px; text-align: center;';
+            statsBlock.innerHTML = `
+                <div style="color: #ff9800; font-weight: bold;">📊 Gesamt: ${totalScripts} Scripts</div>
+            `;
+            container.appendChild(statsBlock);
+        }
+
+        // ===== SPALTE 2: DETAILS ANZEIGEN =====
+        function zeigeOffeneDetails(wochenData, blockElement) {
+            // Update active state
+            document.querySelectorAll('#offeneAuftraege .wochenblock').forEach(el => {
+                el.classList.remove('active');
+            });
+            blockElement.classList.add('active');
+            
+            aktuelleAuswahl.wochenblock = wochenData;
+            
+            const container = document.getElementById('offeneDetails');
+            container.innerHTML = '';
+            
+            // Zeige alle Arbeitsproben dieser Woche
+            if (wochenData.arbeitsproben && wochenData.arbeitsproben.length > 0) {
+                wochenData.arbeitsproben.forEach(probe => {
+                    const item = document.createElement('div');
+                    item.className = `detail-item ${probe.qualitaet}`;
+                    item.innerHTML = `
+                        <span class="quality-label ${probe.qualitaet}">
+                            ${probe.qualitaet === 'gold' ? '🥇 Gold' : 
+                              probe.qualitaet === 'silber' ? '🥈 Silber' : '🥉 Bronze'}
+                        </span>
+                        am ${probe.datum}
+                        <div style="color: #aaa; font-size: 0.9em; margin-top: 5px;">
+                            ${probe.titel}
+                        </div>
+                    `;
+                    item.onclick = () => zeigeArbeitsprobe(probe);
+                    container.appendChild(item);
+                });
+            }
+        }
+
+        function zeigeAktiveDetails(wochenData, blockElement) {
+            // Update active state
+            document.querySelectorAll('#aktiveAuftraege .wochenblock').forEach(el => {
+                el.classList.remove('active');
+            });
+            blockElement.classList.add('active');
+            
+            aktuelleAuswahl.wochenblock = wochenData;
+            
+            const container = document.getElementById('aktiveDetails');
+            container.innerHTML = '';
+            
+            // Zeige alle Scripts dieser Woche
+            if (wochenData.scripts && wochenData.scripts.length > 0) {
+                wochenData.scripts.forEach(script => {
+                    const item = document.createElement('div');
+                    item.className = `detail-item ${script.qualitaet}`;
+                    item.innerHTML = `
+                        <span class="quality-label ${script.qualitaet}">
+                            ${script.qualitaet === 'gold' ? '🥇 Gold' : 
+                              script.qualitaet === 'silber' ? '🥈 Silber' : '🥉 Bronze'}
+                        </span>
+                        am ${script.datum}
+                        <div style="color: #aaa; font-size: 0.9em; margin-top: 5px;">
+                            ${script.titel}
+                        </div>
+                    `;
+                    item.onclick = () => zeigeScript(script);
+                    container.appendChild(item);
+                });
+            }
+        }
+
+        // ===== SPALTE 3: INHALT ANZEIGEN =====
+        function zeigeArbeitsprobe(probe) {
+            aktuelleAuswahl.detail = probe;
+            aktuelleAuswahl.inhalt = probe.inhalt;
+            
+            const container = document.getElementById('arbeitsprobeAnzeige');
+            container.innerHTML = `
+                <div class="script-container">
+                    <div class="script-title">${probe.titel}</div>
+                    <div class="script-text">${probe.inhalt}</div>
+                </div>
+            `;
+            
+            // Enable download buttons
+            document.getElementById('pdfBtnOffen').disabled = false;
+            document.getElementById('htmlBtnOffen').disabled = false;
+        }
+
+        function zeigeScript(script) {
+            aktuelleAuswahl.detail = script;
+            aktuelleAuswahl.inhalt = script.inhalt;
+            
+            const container = document.getElementById('scriptAnzeige');
+            container.innerHTML = `
+                <div class="script-container">
+                    <div class="script-title">${script.titel}</div>
+                    <div class="script-text">${script.inhalt}</div>
+                </div>
+            `;
+            
+            // Enable download buttons
+            document.getElementById('pdfBtnAktiv').disabled = false;
+            document.getElementById('htmlBtnAktiv').disabled = false;
+        }
+
+        // ===== DOWNLOAD FUNKTIONEN =====
+        function downloadPDF(typ) {
+            if (!aktuelleAuswahl.detail) return;
+            
+            showNotification('PDF wird erstellt...', 'info');
+            
+            // Hier würde die DocRaptor API Integration kommen
+            setTimeout(() => {
+                // Simuliere PDF-Generierung
+                const pdfData = {
+                    title: aktuelleAuswahl.detail.titel,
+                    content: aktuelleAuswahl.inhalt,
+                    quality: aktuelleAuswahl.detail.qualitaet,
+                    type: typ
+                };
+                
+                // In echter Implementierung: DocRaptor API Call
+                console.log('PDF Generation:', pdfData);
+                
+                showNotification('PDF erfolgreich erstellt!', 'success');
+                
+                // Simuliere Download
+                const link = document.createElement('a');
+                link.download = `${aktuelleAuswahl.detail.titel.replace(/\s+/g, '_')}.pdf`;
+                link.href = '#'; // Würde echte PDF-URL sein
+                link.click();
+            }, 2000);
+        }
+
+        function downloadHTML(typ) {
+            if (!aktuelleAuswahl.detail) return;
+            
+            // Generiere HTML mit Template
+            const htmlTemplate = generateHTMLTemplate(
+                aktuelleAuswahl.detail.titel,
+                aktuelleAuswahl.inhalt,
+                aktuelleAuswahl.detail.qualitaet
+            );
+            
+            // Download HTML
+            const blob = new Blob([htmlTemplate], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `${aktuelleAuswahl.detail.titel.replace(/\s+/g, '_')}.html`;
+            link.href = url;
+            link.click();
+            
+            showNotification('HTML erfolgreich heruntergeladen!', 'success');
+        }
+
+        function generateHTMLTemplate(title, content, quality) {
+            return `<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 60px;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .quality-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            ${quality === 'gold' ? 'background: linear-gradient(45deg, #ffd700, #ffed4e); color: #333;' : 
+              quality === 'silber' ? 'background: linear-gradient(45deg, #c0c0c0, #e8e8e8); color: #333;' : 
+              'background: linear-gradient(45deg, #cd7f32, #daa520); color: white;'}
+        }
+        .content {
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>${title}</h1>
+        <span class="quality-badge">${quality.toUpperCase()} QUALITY</span>
+        <div class="content">${content}</div>
+        <div class="footer">
+            Generated by PW-Script-Studio • ${new Date().toLocaleDateString('de-DE')}
+        </div>
+    </div>
+</body>
+</html>`;
+        }
+
+        // ===== NOTIFICATION SYSTEM =====
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 10px;
+                color: white;
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            `;
+            
+            switch(type) {
+                case 'success':
+                    notification.style.background = 'linear-gradient(45deg, #4caf50, #66bb6a)';
+                    break;
+                case 'error':
+                    notification.style.background = 'linear-gradient(45deg, #f44336, #ef5350)';
+                    break;
+                case 'info':
+                    notification.style.background = 'linear-gradient(45deg, #2196f3, #42a5f5)';
+                    break;
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Animation Styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
