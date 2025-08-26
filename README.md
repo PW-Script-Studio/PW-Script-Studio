@@ -34,16 +34,20 @@ PW-Script-Studio/
 
 ## 🔧 Installation
 
+**Getestet mit Python 3.12.0 auf Windows**
+
 ### 1. Repository klonen
 ```bash
-git clone https://github.com/[USERNAME]/PW-Script-Studio.git
+git clone https://github.com/PW-Script-Studio/PW-Script-Studio.git
 cd PW-Script-Studio
 ```
 
 ### 2. Virtual Environment erstellen
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate  # Windows
+source .venv/Scripts/activate  # Windows (Git Bash)
+# oder
+.venv\Scripts\activate.bat     # Windows (CMD)
 # oder
 source .venv/bin/activate      # Linux/Mac
 ```
@@ -74,6 +78,24 @@ python manage.py createsuperuser
 ```bash
 python manage.py runserver
 ```
+
+## ⚡ Schnellstart (für Entwickler)
+
+**Das Projekt ist bereits vorkonfiguriert! Nach dem Klonen:**
+
+```bash
+# 1. Virtual Environment aktivieren
+source .venv/Scripts/activate  # Windows Git Bash
+
+# 2. Server starten (Dependencies sind bereits installiert)
+python manage.py runserver
+```
+
+**✅ Fertig! Das Projekt läuft auf:** http://127.0.0.1:8000/
+
+**🔧 Admin-Interface:** http://127.0.0.1:8000/admin/
+- Ein Admin-User ist bereits vorhanden
+- Für neuen Admin: `python manage.py createsuperuser`
 
 ## 🔑 API-Konfiguration
 
