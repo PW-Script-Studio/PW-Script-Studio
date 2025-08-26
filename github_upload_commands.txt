@@ -1,0 +1,15 @@
+# GitHub Upload Befehle
+# Führen Sie diese Befehle aus, nachdem Sie das Repository auf GitHub erstellt haben:
+
+# 1. Remote Repository hinzufügen (ersetzen Sie [USERNAME] mit Ihrem GitHub-Username)
+git remote add origin https://github.com/[USERNAME]/PW-Script-Studio.git
+
+# 2. Branch umbenennen zu main (falls gewünscht)
+git branch -M main
+
+# 3. Code zu GitHub pushen
+git push -u origin main
+
+# Alternative: Falls Sie SSH verwenden
+# git remote add origin git@github.com:[USERNAME]/PW-Script-Studio.git
+# git push -u origin main

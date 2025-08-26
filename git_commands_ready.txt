@@ -1,0 +1,22 @@
+# 🚀 BEREIT ZUM KOPIEREN: Git-Befehle für GitHub Upload
+
+# SCHRITT 1: Erstellen Sie das Repository auf GitHub.com
+# - Gehen Sie zu: https://github.com/new
+# - Name: PW-Script-Studio
+# - Lassen Sie alle Checkboxen LEER
+# - Klicken Sie "Create repository"
+
+# SCHRITT 2: Ersetzen Sie [IHR-USERNAME] mit Ihrem echten GitHub-Username
+# und führen Sie diese Befehle aus:
+
+git remote add origin https://github.com/[IHR-USERNAME]/PW-Script-Studio.git
+git branch -M main
+git push -u origin main
+
+# BEISPIEL: Falls Ihr Username "peter123" ist:
+# git remote add origin https://github.com/peter123/PW-Script-Studio.git
+# git branch -M main  
+# git push -u origin main
+
+# FERTIG! Ihr Projekt ist dann online unter:
+# https://github.com/[IHR-USERNAME]/PW-Script-Studio
