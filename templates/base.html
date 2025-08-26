@@ -5,7 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PW-Script-Studio{% endblock %}</title>
-    
+
+    <!-- CSRF Token für API-Calls -->
+    {% csrf_token %}
+    <script>
+        window.csrfToken = '{{ csrf_token }}';
+    </script>
+
     <!-- Base CSS -->
     <style>
         * {
@@ -130,7 +136,10 @@
             });
         });
     </script>
-    
+
+    <!-- API Client für Frontend-Backend-Kommunikation -->
+    <script src="{% static 'js/api-client.js' %}"></script>
+
     <!-- Page specific JavaScript -->
     {% block extra_js %}{% endblock %}
 </body>

@@ -1,53 +1,112 @@
-// Kachel 2 - Analyse JavaScript
+// Kachel 2 - Analyse JavaScript - API Version
 
-// Daten aus Kachel 1
-        let geladeneAuftraege = {
-            offen: [],
-            aktiv: []
-        };
-        
-        // Ausgewählte Qualität
-        let qualitaetOffen = null;
-        let qualitaetAktiv = null;
-        
-        // Aktuell bearbeiteter Auftrag
-        let aktuellerAuftrag = null;
+// Globale Daten (werden von API geladen)
+let geladeneAuftraege = {
+    offen: [],
+    aktiv: []
+};
 
-        // LocalStorage leeren
-        function clearLocalStorage() {
-            if(confirm('Möchten Sie wirklich alle gespeicherten Aufträge löschen?')) {
-                localStorage.removeItem('kachel2_auftraege');
-                location.reload();
-            }
+// Ausgewählte Qualität
+let qualitaetOffen = null;
+let qualitaetAktiv = null;
+
+// Aktuell bearbeiteter Auftrag
+let aktuellerAuftrag = null;
+
+// Workflow-spezifische Aufträge von API laden
+async function ladeWorkflowAuftraege() {
+    try {
+        showLoading('Workflow-Daten werden geladen...');
+
+        // OFFENE Aufträge (Bewerbungen) laden
+        const offeneData = await AuftraegeAPI.getOffene();
+        geladeneAuftraege.offen = offeneData.auftraege || [];
+
+        // AKTIVE Aufträge (Kundenprojekte) laden
+        const aktiveData = await AuftraegeAPI.getAktive();
+        geladeneAuftraege.aktiv = aktiveData.auftraege || [];
+
+        console.log('Workflow-Aufträge geladen:', geladeneAuftraege);
+
+        // URL-Parameter prüfen für direkten Workflow-Start
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+
+        if (status === 'offen') {
+            switchToOffenerBereich();
+        } else if (status === 'aktiv') {
+            switchToAktiverBereich();
+        } else {
+            // Standard: Beide Bereiche ausblenden
+            document.getElementById('offenerBereich').classList.add('hidden');
+            document.getElementById('aktiverBereich').classList.add('hidden');
         }
-        
-        // Beim Laden der Seite prüfen
-        document.addEventListener('DOMContentLoaded', function() {
-            // Nur echte Daten aus Kachel 1 laden
-            ladeAuftraege();
-        });
 
-        // Aufträge aus localStorage laden
-        function ladeAuftraege() {
-            try {
-                const offenData = localStorage.getItem('kachel2_auftraege');
-                if (offenData) {
-                    const parsed = JSON.parse(offenData);
-                    
-                    // ZUERST: Beide Bereiche ausblenden
-                    document.getElementById('offenerBereich').classList.add('hidden');
-                    document.getElementById('aktiverBereich').classList.add('hidden');
-                    
-                    // Beide Status-Indikatoren inaktiv setzen
-                    document.getElementById('statusOffen').classList.add('inactive');
-                    document.getElementById('statusOffen').classList.remove('active');
-                    document.getElementById('statusAktiv').classList.add('inactive');
-                    document.getElementById('statusAktiv').classList.remove('active');
-                    
-                    // DANN: Nur den relevanten Bereich einblenden
-                    if (parsed.status === 'offen') {
-                        // Offene Aufträge laden
-                        geladeneAuftraege.offen = parsed.auftraege;
+        hideLoading();
+        showSuccess('Workflow-Daten erfolgreich geladen!');
+
+    } catch (error) {
+        hideLoading();
+        console.error('Fehler beim Laden der Workflow-Daten:', error);
+        showError('Workflow-Daten konnten nicht geladen werden');
+    }
+}
+
+// Beim Laden der Seite - API-Daten laden
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Kachel 2 - Analyse geladen');
+    await ladeWorkflowAuftraege();
+});
+
+// Zu OFFENER Workflow wechseln (Bewerbungen)
+async function switchToOffenerBereich() {
+    try {
+        // UI umschalten
+        document.getElementById('offenerBereich').classList.remove('hidden');
+        document.getElementById('aktiverBereich').classList.add('hidden');
+
+        // Status-Indikatoren aktualisieren
+        document.getElementById('statusOffen').classList.add('active');
+        document.getElementById('statusOffen').classList.remove('inactive');
+        document.getElementById('statusAktiv').classList.add('inactive');
+        document.getElementById('statusAktiv').classList.remove('active');
+
+        // OFFENE Aufträge anzeigen
+        zeigeOffeneAuftraege();
+
+        console.log('🔓 OFFENER Workflow aktiviert - Bewerbungen');
+        showSuccess('OFFENER Workflow: Bewerbungen werden bearbeitet');
+
+    } catch (error) {
+        console.error('Fehler beim Wechsel zu OFFENER Workflow:', error);
+        showError('Workflow-Wechsel fehlgeschlagen');
+    }
+}
+
+// Zu AKTIVER Workflow wechseln (Kundenprojekte)
+async function switchToAktiverBereich() {
+    try {
+        // UI umschalten
+        document.getElementById('aktiverBereich').classList.remove('hidden');
+        document.getElementById('offenerBereich').classList.add('hidden');
+
+        // Status-Indikatoren aktualisieren
+        document.getElementById('statusAktiv').classList.add('active');
+        document.getElementById('statusAktiv').classList.remove('inactive');
+        document.getElementById('statusOffen').classList.add('inactive');
+        document.getElementById('statusOffen').classList.remove('active');
+
+        // AKTIVE Aufträge anzeigen
+        zeigeAktiveAuftraege();
+
+        console.log('🔥 AKTIVER Workflow aktiviert - Kundenprojekte');
+        showSuccess('AKTIVER Workflow: Kundenprojekte werden bearbeitet');
+
+    } catch (error) {
+        console.error('Fehler beim Wechsel zu AKTIVER Workflow:', error);
+        showError('Workflow-Wechsel fehlgeschlagen');
+    }
+}
                         document.getElementById('offenCount').textContent = parsed.auftraege.length;
                         
                         // Status-Anzeige aktualisieren

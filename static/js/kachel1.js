@@ -1,109 +1,166 @@
-// Kachel 1 - Auftragsverwaltung JavaScript
+// Kachel 1 - Auftragsverwaltung JavaScript - API Version
 
-// Auftragsdaten speichern
-        let auftraege = {
-            offen: [],
-            aktiv: [],
-            archiv: []
+// Globale Auftragsdaten (werden von API geladen)
+let auftraege = {
+    offen: [],
+    aktiv: [],
+    archiv: []
+};
+
+// Alle Aufträge von API laden
+async function ladeAuftraege() {
+    try {
+        showLoading('Aufträge werden geladen...');
+
+        const data = await AuftraegeAPI.getAll();
+        console.log('Aufträge geladen:', data);
+
+        // Aufträge nach Status sortieren
+        auftraege = {
+            offen: data.results.filter(a => a.status === 'OFFEN'),
+            aktiv: data.results.filter(a => a.status === 'AKTIV'),
+            archiv: data.results.filter(a => ['ABGESCHLOSSEN', 'ABGESAGT'].includes(a.status))
         };
-        
-        let naechsteId = 1001; // Startet bei ID 1001
 
-        // Auftrag anlegen
-        function auftragAnlegen() {
-            const titel = document.getElementById('auftragTitel').value.trim();
-            const beschreibung = document.getElementById('auftragBeschreibung').value.trim();
-            
-            if (!titel) {
-                alert('Bitte einen Auftragstitel eingeben!');
-                return;
-            }
-            
-            if (!beschreibung) {
-                alert('Bitte eine Beschreibung eingeben!');
-                return;
-            }
-            
-            const neuerAuftrag = {
-                id: `PW-${naechsteId++}`,
-                titel: titel,
-                beschreibung: beschreibung,
-                status: 'OFFEN',
-                erstelltAm: new Date().toLocaleString('de-DE')
-            };
-            
-            auftraege.offen.push(neuerAuftrag);
-            
-            // Eingabefelder leeren
-            document.getElementById('auftragTitel').value = '';
-            document.getElementById('auftragBeschreibung').value = '';
-            
-            // UI aktualisieren
-            aktualisiereAnzeige();
-            
-            // Visuelle Bestätigung
-            showNotification('Auftrag erfolgreich angelegt!', 'success');
-        }
+        // UI aktualisieren
+        aktualisiereAnzeige();
+        hideLoading();
 
-        // Auftrag zusagen
-        function auftragZusagen(auftragId) {
-            const index = auftraege.offen.findIndex(a => a.id === auftragId);
-            if (index !== -1) {
-                const auftrag = auftraege.offen.splice(index, 1)[0];
-                auftrag.status = 'AKTIV';
-                auftrag.zugesagtAm = new Date().toLocaleString('de-DE');
-                auftraege.aktiv.push(auftrag);
-                aktualisiereAnzeige();
-                showNotification('Auftrag zugesagt!', 'success');
-            }
-        }
+    } catch (error) {
+        hideLoading();
+        console.error('Fehler beim Laden der Aufträge:', error);
+        showError('Aufträge konnten nicht geladen werden');
+    }
+}
 
-        // Auftrag absagen
-        function auftragAbsagen(auftragId) {
-            const index = auftraege.offen.findIndex(a => a.id === auftragId);
-            if (index !== -1) {
-                const auftrag = auftraege.offen.splice(index, 1)[0];
-                auftrag.status = 'ABGESAGT';
-                auftrag.abgesagtAm = new Date().toLocaleString('de-DE');
-                auftraege.archiv.push(auftrag);
-                aktualisiereAnzeige();
-                showNotification('Auftrag abgesagt!', 'error');
-            }
-        }
+// Auftrag anlegen (über API)
+async function auftragAnlegen() {
+    const titel = document.getElementById('auftragTitel').value.trim();
+    const beschreibung = document.getElementById('auftragBeschreibung').value.trim();
 
-        // Auftrag abschließen
-        function auftragAbschliessen(auftragId) {
-            const index = auftraege.aktiv.findIndex(a => a.id === auftragId);
-            if (index !== -1) {
-                const auftrag = auftraege.aktiv.splice(index, 1)[0];
-                auftrag.status = 'ABGESCHLOSSEN';
-                auftrag.abgeschlossenAm = new Date().toLocaleString('de-DE');
-                auftraege.archiv.push(auftrag);
-                aktualisiereAnzeige();
-                showNotification('Auftrag abgeschlossen!', 'success');
-            }
-        }
+    if (!titel) {
+        showError('Bitte einen Auftragstitel eingeben!');
+        return;
+    }
 
-        // In andere Kachel laden
-        function ladeInKachel(kachelNr, status) {
-            const relevantAuftraege = status === 'offen' ? auftraege.offen : auftraege.aktiv;
-            
-            if (relevantAuftraege.length === 0) {
-                alert(`Keine ${status === 'offen' ? 'offenen' : 'aktiven'} Aufträge vorhanden!`);
-                return;
-            }
-            
-            // Hier würde normalerweise die Weiterleitung erfolgen
-            console.log(`Lade ${relevantAuftraege.length} ${status} Aufträge in Kachel ${kachelNr}`);
-            showNotification(`${relevantAuftraege.length} Aufträge werden in Kachel ${kachelNr} geladen...`, 'info');
-            
-            // In echter Anwendung würde hier die Datenübertragung stattfinden
-            // z.B. localStorage oder API-Call
-            localStorage.setItem(`kachel${kachelNr}_auftraege`, JSON.stringify({
-                auftraege: relevantAuftraege,
-                status: status
-            }));
-        }
+    if (!beschreibung) {
+        showError('Bitte eine Beschreibung eingeben!');
+        return;
+    }
+
+    const auftragData = {
+        id: generiereAuftragID(),
+        titel: titel,
+        beschreibung: beschreibung,
+        status: 'OFFEN',
+        prioritaet: 'MITTEL'
+    };
+
+    try {
+        showLoading('Auftrag wird gespeichert...');
+
+        const neuerAuftrag = await AuftraegeAPI.create(auftragData);
+        console.log('Auftrag erstellt:', neuerAuftrag);
+
+        // Eingabefelder leeren
+        document.getElementById('auftragTitel').value = '';
+        document.getElementById('auftragBeschreibung').value = '';
+
+        // Aufträge neu laden
+        await ladeAuftraege();
+
+        hideLoading();
+        showSuccess('Auftrag erfolgreich angelegt!');
+
+    } catch (error) {
+        hideLoading();
+        console.error('Fehler beim Erstellen des Auftrags:', error);
+        showError('Auftrag konnte nicht gespeichert werden');
+    }
+}
+
+// Auftrag zusagen (Status ändern über API)
+async function auftragZusagen(auftragId) {
+    try {
+        showLoading('Auftrag wird zugesagt...');
+
+        const auftragData = {
+            status: 'AKTIV'
+        };
+
+        await AuftraegeAPI.update(auftragId, auftragData);
+        await ladeAuftraege(); // Neu laden
+
+        hideLoading();
+        showSuccess('Auftrag zugesagt!');
+
+    } catch (error) {
+        hideLoading();
+        console.error('Fehler beim Zusagen:', error);
+        showError('Auftrag konnte nicht zugesagt werden');
+    }
+}
+
+// Auftrag absagen (Status ändern über API)
+async function auftragAbsagen(auftragId) {
+    try {
+        showLoading('Auftrag wird abgesagt...');
+
+        const auftragData = {
+            status: 'ABGESAGT'
+        };
+
+        await AuftraegeAPI.update(auftragId, auftragData);
+        await ladeAuftraege(); // Neu laden
+
+        hideLoading();
+        showSuccess('Auftrag abgesagt');
+
+    } catch (error) {
+        hideLoading();
+        console.error('Fehler beim Absagen:', error);
+        showError('Auftrag konnte nicht abgesagt werden');
+    }
+}
+
+// Auftrag abschließen (Status ändern über API)
+async function auftragAbschliessen(auftragId) {
+    try {
+        showLoading('Auftrag wird abgeschlossen...');
+
+        const auftragData = {
+            status: 'ABGESCHLOSSEN'
+        };
+
+        await AuftraegeAPI.update(auftragId, auftragData);
+        await ladeAuftraege(); // Neu laden
+
+        hideLoading();
+        showSuccess('Auftrag abgeschlossen!');
+
+    } catch (error) {
+        hideLoading();
+        console.error('Fehler beim Abschließen:', error);
+        showError('Auftrag konnte nicht abgeschlossen werden');
+    }
+}
+
+// In andere Kachel laden (über URL-Parameter)
+function ladeInKachel(kachelNr, status) {
+    const relevantAuftraege = status === 'offen' ? auftraege.offen : auftraege.aktiv;
+
+    if (relevantAuftraege.length === 0) {
+        showError(`Keine ${status === 'offen' ? 'offenen' : 'aktiven'} Aufträge vorhanden!`);
+        return;
+    }
+
+    // Weiterleitung zu Kachel mit Status-Parameter
+    console.log(`Lade ${relevantAuftraege.length} ${status} Aufträge in Kachel ${kachelNr}`);
+    showSuccess(`${relevantAuftraege.length} Aufträge werden in Kachel ${kachelNr} geladen...`);
+
+    // Weiterleitung mit Status-Parameter (API wird dort die Daten laden)
+    window.location.href = `/kachel${kachelNr}/?status=${status}`;
+}
 
         // Anzeige aktualisieren
         function aktualisiereAnzeige() {
@@ -231,45 +288,15 @@
             }
         });
 
-        // Demo-Daten beim Start
-        function ladeDemoDaten() {
-            auftraege.offen = [
-                {
-                    id: 'PW-1000',
-                    titel: 'Website Redesign',
-                    beschreibung: 'Komplette Überarbeitung der Firmenwebsite',
-                    status: 'OFFEN',
-                    erstelltAm: '25.08.2025, 10:30:00'
-                }
-            ];
-            
-            auftraege.aktiv = [
-                {
-                    id: 'PW-999',
-                    titel: 'API Integration',
-                    beschreibung: 'REST API für Kundendaten',
-                    status: 'AKTIV',
-                    erstelltAm: '24.08.2025, 14:15:00',
-                    zugesagtAm: '24.08.2025, 15:00:00'
-                }
-            ];
-            
-            auftraege.archiv = [
-                {
-                    id: 'PW-998',
-                    titel: 'Datenbank Optimierung',
-                    beschreibung: 'Performance Verbesserung',
-                    status: 'ABGESCHLOSSEN',
-                    erstelltAm: '23.08.2025, 09:00:00',
-                    zugesagtAm: '23.08.2025, 09:30:00',
-                    abgeschlossenAm: '24.08.2025, 16:45:00'
-                }
-            ];
-            
-            aktualisiereAnzeige();
-        }
+        // Demo-Daten entfernt - Daten kommen jetzt von API
 
-        // Beim Laden der Seite
-        document.addEventListener('DOMContentLoaded', function() {
-            ladeDemoDaten();
+        // Beim Laden der Seite - API-Daten laden
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Kachel 1 - Auftragsverwaltung geladen');
+
+            // Aufträge von API laden
+            await ladeAuftraege();
+
+            // Auto-Refresh alle 60 Sekunden
+            setInterval(ladeAuftraege, 60000);
         });
