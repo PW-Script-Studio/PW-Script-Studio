@@ -42,50 +42,46 @@
         };
 
         // ===== INITIALISIERUNG =====
-        document.addEventListener('DOMContentLoaded', function() {
-            ladeDatenAusLocalStorage();
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Kachel 3 - Export geladen');
+            await ladeExportDaten();
             zeigeOffenenBereich();  // Standard: Offene Aufträge anzeigen
         });
 
         // ===== DATEN LADEN =====
-        function ladeDatenAusLocalStorage() {
+        async function ladeExportDaten() {
             try {
-                // Prüfe ob localStorage verfügbar ist
-                if (typeof(Storage) === "undefined") {
-                    console.warn('LocalStorage nicht verfügbar');
-                    erstelleDemoDaten();
-                    return;
+                showLoading('Export-Daten werden geladen...');
+
+                // OFFENE Aufträge (Bewerbungen) laden
+                const offeneData = await AuftraegeAPI.getOffene();
+                if (offeneData.auftraege && offeneData.auftraege.length > 0) {
+                    // Ersten OFFENEN Auftrag als Beispiel laden
+                    datenbank.offen.auftrag = offeneData.auftraege[0];
+                    console.log('✅ Offener Auftrag von API geladen:', datenbank.offen.auftrag.titel);
                 }
 
-                // Versuche echte Daten aus Kachel 1 zu laden
-                try {
-                    const kachel3Daten = localStorage.getItem('kachel3_auftraege');
-                    if (kachel3Daten) {
-                        const parsed = JSON.parse(kachel3Daten);
-                        
-                        // Lade die Daten basierend auf Status
-                        if (parsed.status === 'offen') {
-                            datenbank.offen.auftrag = parsed.auftrag;
-                            datenbank.offen.wochenBloecke = parsed.wochenBloecke || {};
-                            console.log('✅ Offener Auftrag aus Kachel 1 geladen:', parsed.auftrag.titel);
-                        } else if (parsed.status === 'aktiv') {
-                            datenbank.aktiv.auftrag = parsed.auftrag;
-                            datenbank.aktiv.wochenBloecke = parsed.wochenBloecke || {};
-                            console.log('✅ Aktiver Auftrag aus Kachel 1 geladen:', parsed.auftrag.titel);
-                        }
-                    } else {
-                        console.log('📭 Keine Daten aus Kachel 1 vorhanden');
-                    }
-                } catch(e) {
-                    console.log('Fehler beim Laden der Daten:', e);
+                // AKTIVE Aufträge (Kundenprojekte) laden
+                const aktiveData = await AuftraegeAPI.getAktive();
+                if (aktiveData.auftraege && aktiveData.auftraege.length > 0) {
+                    // Ersten AKTIVEN Auftrag als Beispiel laden
+                    datenbank.aktiv.auftrag = aktiveData.auftraege[0];
+                    console.log('✅ Aktiver Auftrag von API geladen:', datenbank.aktiv.auftrag.titel);
                 }
 
-            } catch(error) {
-                console.log('LocalStorage Fehler:', error);
+                console.log('Export-Daten von API geladen:', datenbank);
+
+                hideLoading();
+                showSuccess('Export-Daten erfolgreich geladen!');
+
+            } catch (error) {
+                hideLoading();
+                console.error('Fehler beim Laden der Export-Daten:', error);
+                showError('Export-Daten konnten nicht geladen werden');
+
+                // Fallback: Demo-Daten erstellen
+                erstelleDemoDaten();
             }
-
-            // Initialisiere leere Datenbank wenn keine Daten vorhanden
-            erstelleDemoDaten();
         }
 
         function erstelleDemoDaten() {
@@ -392,32 +388,56 @@
         }
 
         // ===== DOWNLOAD FUNKTIONEN =====
-        function downloadPDF(typ) {
-            if (!aktuelleAuswahl.detail) return;
-            
-            showNotification('PDF wird erstellt...', 'info');
-            
-            // Hier würde die DocRaptor API Integration kommen
-            setTimeout(() => {
-                // Simuliere PDF-Generierung
-                const pdfData = {
-                    title: aktuelleAuswahl.detail.titel,
-                    content: aktuelleAuswahl.inhalt,
-                    quality: aktuelleAuswahl.detail.qualitaet,
-                    type: typ
-                };
-                
-                // In echter Implementierung: DocRaptor API Call
-                console.log('PDF Generation:', pdfData);
-                
-                showNotification('PDF erfolgreich erstellt!', 'success');
-                
-                // Simuliere Download
-                const link = document.createElement('a');
-                link.download = `${aktuelleAuswahl.detail.titel.replace(/\s+/g, '_')}.pdf`;
-                link.href = '#'; // Würde echte PDF-URL sein
-                link.click();
-            }, 2000);
+        async function downloadPDF(typ) {
+            if (!aktuelleAuswahl.detail) {
+                showNotification('Bitte erst einen Auftrag auswählen!', 'error');
+                return;
+            }
+
+            showNotification('PDF wird mit DocRaptor generiert...', 'info');
+
+            try {
+                // Bestimme Export-Typ basierend auf Workflow
+                let exportType = 'arbeitsprobe'; // Default für OFFENE Aufträge
+
+                if (typ === 'aktiv' || aktuelleAuswahl.detail.status === 'AKTIV') {
+                    exportType = 'script'; // Für AKTIVE Aufträge
+                }
+
+                console.log(`PDF-Export gestartet: Auftrag ${aktuelleAuswahl.detail.id}, Typ: ${exportType}`);
+
+                // DocRaptor API-Call über Django-Backend
+                const response = await fetch(`/kachel3/pdf/${aktuelleAuswahl.detail.id}/?type=${exportType}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                // PDF-Blob erhalten
+                const blob = await response.blob();
+
+                // Download initiieren
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${aktuelleAuswahl.detail.id}_${exportType}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                showNotification('PDF erfolgreich heruntergeladen!', 'success');
+
+            } catch (error) {
+                console.error('PDF-Export Fehler:', error);
+                showNotification(`PDF-Export fehlgeschlagen: ${error.message}`, 'error');
+            }
         }
 
         function downloadHTML(typ) {

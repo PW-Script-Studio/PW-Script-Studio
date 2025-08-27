@@ -153,56 +153,8 @@ async function switchToAktiverBereich() {
             }
         }
         
-        // Demo-Daten für Tests
-        function ladeDemoDaten() {
-            // Demo-Auftrag erstellen
-            const demoOffen = {
-                status: 'offen',
-                auftraege: [{
-                    id: 'PW-1001',
-                    titel: 'E-Commerce Platform Development',
-                    beschreibung: 'Entwicklung einer modernen E-Commerce Plattform mit React und Node.js, inklusive Zahlungsintegration und Admin-Dashboard',
-                    status: 'OFFEN',
-                    erstelltAm: '26.08.2025, 14:30:00'
-                }]
-            };
-            
-            // Demo-Daten in localStorage speichern
-            localStorage.setItem('kachel2_auftraege', JSON.stringify(demoOffen));
-            
-            // Beide Bereiche ausblenden
-            document.getElementById('offenerBereich').classList.add('hidden');
-            document.getElementById('aktiverBereich').classList.add('hidden');
-            
-            // Offenen Bereich aktivieren
-            geladeneAuftraege.offen = demoOffen.auftraege;
-            document.getElementById('offenCount').textContent = demoOffen.auftraege.length;
-            document.getElementById('statusOffen').classList.remove('inactive');
-            document.getElementById('statusOffen').classList.add('active');
-            document.getElementById('statusAktiv').classList.add('inactive');
-            document.getElementById('offenerBereich').classList.remove('hidden');
-            
-            // Ersten Auftrag anzeigen
-            zeigeOffenenAuftrag(demoOffen.auftraege[0]);
-            
-            // Beispiel Upwork-Text vorausfüllen
-            document.getElementById('upworkBeschreibung').value = `We need an experienced developer to build a modern e-commerce platform.
-
-Requirements:
-- React.js for frontend
-- Node.js/Express for backend
-- Payment gateway integration (Stripe)
-- Admin dashboard
-- Mobile responsive design
-- User authentication
-- Product catalog with search
-- Shopping cart functionality
-
-Budget: $5000-$8000
-Timeline: 6-8 weeks`;
-            
-            showNotification('Demo-Auftrag geladen! Du kannst jetzt den Workflow testen.', 'info');
-        }
+        // Demo-Daten entfernt - Echte API-Daten werden verwendet
+        // Alle Daten kommen jetzt von ladeWorkflowAuftraege() über Django API
 
         // Manuell zwischen Bereichen wechseln
         function wechsleZuOffen() {

@@ -24,7 +24,7 @@ def auftrag_list(request):
         'page_title': 'Auftragsverwaltung'
     }
 
-    return render(request, 'kachel1/auftrag_list.html', context)
+    return render(request, 'kachel1/index.html', context)
 
 def auftrag_detail(request, auftrag_id):
     """

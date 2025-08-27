@@ -3,7 +3,7 @@ from django.http import JsonResponse
 
 def analyse_dashboard(request):
     """Dashboard für Kachel 2 - Analyse"""
-    return render(request, 'kachel2/dashboard.html')
+    return render(request, 'kachel2/index.html')
 
 def workflow_offen_list(request):
     """Liste der offenen Workflows (Bewerbungen)"""
